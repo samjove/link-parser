@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"io"
 
 	"golang.org/x/net/html"
@@ -19,17 +18,33 @@ func Parse(r io.Reader) ([]Link, error) {
 	if err != nil {
 		return nil, err
 	}
-	traverse(doc, "")
-	return nil, nil 
+	linkNodes := findLinks(doc)
+	var links []Link
+	for _, link := range linkNodes {
+		links = append(links, buildLink(link))
+	}
+	return links, nil 
 }
 
-func traverse(n *html.Node, padding string) {
-	data := n.Data
-	if n.Type == html.ElementNode {
-		data = "<" + data + ">"
+func findLinks(n *html.Node) []*html.Node {
+	if n.Type == html.ElementNode && n.Data == "a" {
+		return []*html.Node{n}
 	}
-	fmt.Println(padding, data)
+	var links []*html.Node
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		traverse(c, padding + "  ")
+		links = append(links, findLinks(c)...)
 	}
+	return links
+}
+
+func buildLink(n *html.Node) Link {
+	var link Link
+	for _, attr := range n.Attr {
+		if attr.Key == "href" {
+			link.URL = attr.Val
+			break
+		}
+	}
+	link.Label = "TODO: Parse label"
+	return link
 }
