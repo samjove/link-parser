@@ -2,6 +2,7 @@ package parser
 
 import (
 	"io"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -45,6 +46,22 @@ func buildLink(n *html.Node) Link {
 			break
 		}
 	}
-	link.Label = "TODO: Parse label"
+	link.Label = findText(n)
 	return link
+}
+
+func findText(n *html.Node) string {
+	if n.Type == html.TextNode {
+		return n.Data
+	}
+	if n.Type != html.ElementNode {
+		return ""
+	}
+
+	var text string
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		text += findText(c) + " "
+	}
+
+	return strings.Join(strings.Fields(text), " ")
 }
